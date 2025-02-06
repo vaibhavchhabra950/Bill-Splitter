@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Splitter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            width: 100%;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .container {
+            max-width: 800px;
+            width: 90%;
+            margin: 2rem auto;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .split-section, .chat-section, .history-section {
+            margin-bottom: 2rem;
+        }
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+        }
+        .chat-input {
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+        .chat-input button {
+            padding: 0.5rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+        }
+        .chat-input button:hover {
+            background-color: #45a049;
+        }
+        .history-log {
+            list-style: none;
+            padding: 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .history-log li {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .history-log li:last-child {
+            border-bottom: none;
+        }
+        button.calculate-btn {
+            padding: 0.5rem 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button.calculate-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <header>Bill Splitter</header>
+    <div class="container">
+        <!-- Bill Splitting Section -->
+        <div class="split-section">
+            <h2>Split the Bill</h2>
+            <input id="billAmount" type="number" placeholder="Enter total amount" style="width:100%;padding:0.5rem;margin-bottom:1rem;">
+            <input id="numPeople" type="number" placeholder="Number of people" style="width:100%;padding:0.5rem;margin-bottom:1rem;">
+            
+            <!-- Participant Details -->
+            <div id="participantsSection">
+                <h3>Enter participants' names and amounts paid</h3>
+                <div id="participantsInputs"></div>
+                <button class="calculate-btn" onclick="addParticipant()">Add Participant</button>
+            </div>
+
+            <!-- Add a break between the buttons -->
+            <br>
+
+            <button class="calculate-btn" onclick="calculateSplit()">Calculate</button>
+            <p id="result" style="margin-top:1rem;color:#4CAF50;font-weight:bold;"></p>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <h2>Chat</h2>
+            <div id="chatBox" class="chat-box"></div>
+            <div class="chat-input">
+                <input id="chatInput" type="text" placeholder="Type a message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="history-section">
+            <h2>History</h2>
+            <ul id="historyLog" class="history-log"></ul>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const chatInput = document.getElementById('chatInput');
+        const historyLog = document.getElementById('historyLog');
+        let participants = [];
+
+        // Function to add a participant input field
+        function addParticipant() {
+            const participantsInputs = document.getElementById('participantsInputs');
+            const participantCount = participantsInputs.childElementCount + 1;
+
+            const participantDiv = document.createElement('div');
+            participantDiv.innerHTML = `
+                <input id="participantName${participantCount}" type="text" placeholder="Name of Participant ${participantCount}" style="width:45%;padding:0.5rem;margin-right:1rem;">
+                <input id="participantAmount${participantCount}" type="number" placeholder="Amount Paid by ${participantCount}" style="width:45%;padding:0.5rem;">
+            `;
+            participantsInputs.appendChild(participantDiv);
+        }
+
+        // Function to calculate the split and record the history
+        function calculateSplit() {
+            const billAmount = parseFloat(document.getElementById('billAmount').value);
+            const numPeople = parseInt(document.getElementById('numPeople').value);
+
+            if (isNaN(billAmount) || isNaN(numPeople) || billAmount <= 0 || numPeople <= 0) {
+                alert('Please enter valid numbers.');
+                return;
+            }
+
+            // Collect participant details
+            participants = [];
+            for (let i = 1; i <= numPeople; i++) {
+                const name = document.getElementById(`participantName${i}`).value.trim();
+                const amountPaid = parseFloat(document.getElementById(`participantAmount${i}`).value);
+
+                if (name && !isNaN(amountPaid) && amountPaid >= 0) {
+                    participants.push({ name, amountPaid });
+                } else {
+                    alert('Please fill in all participant details correctly.');
+                    return;
+                }
+            }
+
+            // Calculate the amount each person should owe
+            const splitAmount = (billAmount / numPeople).toFixed(2);
+            document.getElementById('result').textContent = `Each person owes: ₹${splitAmount}`;
+
+            // Calculate who owes whom
+            let historyText = '';
+            for (let i = 0; i < participants.length; i++) {
+                const owedAmount = parseFloat(splitAmount) - participants[i].amountPaid;
+
+                for (let j = 0; j < participants.length; j++) {
+                    if (i !== j) {
+                        const participant1 = participants[i];
+                        const participant2 = participants[j];
+
+                        const amountOwed = parseFloat(splitAmount) - participant2.amountPaid;
+                        if (amountOwed > 0) {
+                            historyText += `${participant1.name} owes ₹${amountOwed} to ${participant2.name}.\n`;
+                        }
+                    }
+                }
+            }
+
+            const historyItem = document.createElement('li');
+            historyItem.textContent = `Bill: ₹${billAmount}, People: ${numPeople}. ${historyText}`;
+            historyLog.appendChild(historyItem);
+        }
+
+        // Function to send a chat message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            const messageItem = document.createElement('p');
+            messageItem.textContent = message;
+            chatBox.appendChild(messageItem);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            chatInput.value = '';
+        }
+    </script>
+</body>
+</html>
